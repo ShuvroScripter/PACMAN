@@ -272,3 +272,106 @@ void movePacman() {
         }
     }
 }
+void moveGhosts() {
+    if (gameOver || gameWon) return;
+
+    for (auto& ghost : ghosts) {
+        ghost.moveCounter++;
+
+        // Change direction randomly every 5-10 moves
+        if (ghost.moveCounter > (5 + rand() % 6)) {
+            int directions[4][2] = {{1,0}, {-1,0}, {0,1}, {0,-1}};
+            int newDir = rand() % 4;
+            ghost.dirX = directions[newDir][0];
+            ghost.dirY = directions[newDir][1];
+            ghost.moveCounter = 0;
+        }
+
+        int nx = ghost.x + ghost.dirX;
+        int ny = ghost.y + ghost.dirY;
+
+        // If next position is valid, move; otherwise, change direction
+        if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS && maze[ny][nx] != 1) {
+            ghost.x = nx;
+            ghost.y = ny;
+        } else {
+            // Change direction when hitting wall
+            int directions[4][2] = {{1,0}, {-1,0}, {0,1}, {0,-1}};
+            int newDir = rand() % 4;
+            ghost.dirX = directions[newDir][0];
+            ghost.dirY = directions[newDir][1];
+            ghost.moveCounter = 0;
+        }
+    }
+}
+
+void checkCollisions() {
+    if (gameOver || gameWon) return;
+
+    for (const auto& ghost : ghosts) {
+        if (pacmanX == ghost.x && pacmanY == ghost.y) {
+            lives--;
+
+            if (lives <= 0) {
+                gameOver = true;
+            } else {
+                // Reset positions but keep score and maze state
+                pacmanX = 1;
+                pacmanY = 1;
+                dirX = 0;
+                dirY = 0;
+                initializeGhosts();
+            }
+            break;
+        }
+    }
+}
+
+void timer(int value) {
+    movePacman();
+    moveGhosts();
+    checkCollisions();
+    glutPostRedisplay();
+    glutTimerFunc(200, timer, 0);
+}
+
+void handleKeys(int key, int, int) {
+    switch (key) {
+        case GLUT_KEY_UP:    dirX = 0; dirY = -1; break;
+        case GLUT_KEY_DOWN:  dirX = 0; dirY = 1;  break;
+        case GLUT_KEY_LEFT:  dirX = -1; dirY = 0; break;
+        case GLUT_KEY_RIGHT: dirX = 1;  dirY = 0; break;
+    }
+}
+
+void keyboard(unsigned char key, int, int) {
+    if (key == 'r' || key == 'R') {
+        resetGame();
+    }
+}
+
+void init() {
+    glClearColor(0, 0, 0, 0);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, COLS * CELL, ROWS * CELL, 0);
+    srand(time(0));
+    initializeGhosts();
+}
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+    glutInitWindowSize(COLS * CELL, ROWS * CELL + 40);
+    glutCreateWindow("Pac-Man with Classic Ghosts");
+
+    init();
+
+    glutDisplayFunc(display);
+    glutSpecialFunc(handleKeys);
+    glutKeyboardFunc(keyboard);
+    glutTimerFunc(200, timer, 0);
+
+    glutMainLoop();
+    return 0;
+}
