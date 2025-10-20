@@ -203,3 +203,72 @@ void drawGhost(const Ghost& ghost) {
     }
     glEnd();
 }
+void drawGhosts() {
+    for (const auto& ghost : ghosts) {
+        drawGhost(ghost);
+    }
+}
+
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // Maze
+    for (int y = 0; y < ROWS; y++) {
+        for (int x = 0; x < COLS; x++) {
+            if (maze[y][x] == 1)
+                drawSquare(x, y, 0.1, 0.1, 0.8);
+            else
+                drawSquare(x, y, 0.0, 0.0, 0.0);
+        }
+    }
+
+    drawPellets();
+    drawPacman();
+    drawGhosts();
+
+    // Display Score and Lives
+    drawText(10, 20, "Score: " + to_string(score));
+    drawText(COLS * CELL - 150, 20, "Lives: " + to_string(lives));
+
+    // Game over or win messages
+    if (gameOver) {
+        drawText(COLS * CELL / 2 - 80, ROWS * CELL / 2, "GAME OVER!");
+        drawText(COLS * CELL / 2 - 100, ROWS * CELL / 2 + 30, "Press R to Restart");
+    }
+
+    if (gameWon) {
+        drawText(COLS * CELL / 2 - 60, ROWS * CELL / 2, "YOU WIN!");
+        drawText(COLS * CELL / 2 - 100, ROWS * CELL / 2 + 30, "Press R to Restart");
+    }
+
+    glutSwapBuffers();
+}
+
+void movePacman() {
+    if (gameOver || gameWon) return;
+
+    int nx = pacmanX + dirX;
+    int ny = pacmanY + dirY;
+
+    if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS && maze[ny][nx] != 1) {
+        pacmanX = nx;
+        pacmanY = ny;
+        if (maze[ny][nx] == 0) {   // pellet eaten
+            maze[ny][nx] = 2;
+            score += 10;
+
+            // Check if all pellets are eaten
+            bool allEaten = true;
+            for (int y = 0; y < ROWS && allEaten; y++) {
+                for (int x = 0; x < COLS && allEaten; x++) {
+                    if (maze[y][x] == 0) {
+                        allEaten = false;
+                    }
+                }
+            }
+            if (allEaten) {
+                gameWon = true;
+            }
+        }
+    }
+}
