@@ -102,3 +102,97 @@ void resetGame() {
     initializeBonusPerks();
     initializeGhosts();
 }
+
+void drawSquare(int x, int y, float r, float g, float b) {
+    glColor3f(r, g, b);
+    glBegin(GL_QUADS);
+    glVertex2f(x * CELL, y * CELL);
+    glVertex2f((x + 1) * CELL, y * CELL);
+    glVertex2f((x + 1) * CELL, (y + 1) * CELL);
+    glVertex2f(x * CELL, (y + 1) * CELL);
+    glEnd();
+}
+
+void drawText(float x, float y, string text) {
+    glColor3f(1, 1, 1);
+    glRasterPos2f(x, y);
+    for (char c : text)
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+}
+
+void drawPellets() {
+    // Draw regular pellets
+    glColor3f(1.0, 1.0, 0.5);
+    for (int y = 0; y < ROWS; y++) {
+        for (int x = 0; x < COLS; x++) {
+            if (maze[y][x] == 0) {
+                glPointSize(5);
+                glBegin(GL_POINTS);
+                glVertex2f(x * CELL + CELL / 2, y * CELL + CELL / 2);
+                glEnd();
+            }
+        }
+    }
+
+    // Draw bonus perks (larger and flashing)
+    float flash = (sin(glutGet(GLUT_ELAPSED_TIME) * 0.01f) > 0) ? 1.0f : 0.7f;
+    glColor3f(0.0, flash, flash); // Cyan flashing color
+    for (int y = 0; y < ROWS; y++) {
+        for (int x = 0; x < COLS; x++) {
+            if (maze[y][x] == 3) {
+                glPointSize(10);
+                glBegin(GL_POINTS);
+                glVertex2f(x * CELL + CELL / 2, y * CELL + CELL / 2);
+                glEnd();
+            }
+        }
+    }
+}
+
+void drawPacman() {
+    float centerX = pacmanX * CELL + CELL/2;
+    float centerY = pacmanY * CELL + CELL/2;
+    float radius = 15.0f;
+
+    // Draw the yellow circle
+    glColor3f(1.0, 1.0, 0.0);
+    glBegin(GL_POLYGON);
+    for (int i = 0; i < 360; i++) {
+        float theta = i * 3.14159f / 180;
+        glVertex2f(centerX + radius * cos(theta),
+                   centerY + radius * sin(theta));
+    }
+    glEnd();
+
+    // Draw the black triangle (mouth) pointing in movement direction
+    glColor3f(0.0, 0.0, 0.0); // Black color for the mouth
+
+    if (dirX == 1 || (dirX == 0 && dirY == 0)) { // Right or default (not moving)
+        glBegin(GL_TRIANGLES);
+        glVertex2f(centerX, centerY); // Center point
+        glVertex2f(centerX + radius, centerY - radius/2); // Top of mouth
+        glVertex2f(centerX + radius, centerY + radius/2); // Bottom of mouth
+        glEnd();
+    }
+    else if (dirX == -1) { // Left
+        glBegin(GL_TRIANGLES);
+        glVertex2f(centerX, centerY); // Center point
+        glVertex2f(centerX - radius, centerY + radius/2); // Top of mouth
+        glVertex2f(centerX - radius, centerY - radius/2); // Bottom of mouth
+        glEnd();
+    }
+    else if (dirY == 1) { // Down
+        glBegin(GL_TRIANGLES);
+        glVertex2f(centerX, centerY); // Center point
+        glVertex2f(centerX - radius/2, centerY + radius); // Left of mouth
+        glVertex2f(centerX + radius/2, centerY + radius); // Right of mouth
+        glEnd();
+    }
+    else if (dirY == -1) { // Up
+        glBegin(GL_TRIANGLES);
+        glVertex2f(centerX, centerY); // Center point
+        glVertex2f(centerX + radius/2, centerY - radius); // Right of mouth
+        glVertex2f(centerX - radius/2, centerY - radius); // Left of mouth
+        glEnd();
+    }
+}
