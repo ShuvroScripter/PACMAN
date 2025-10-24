@@ -286,3 +286,150 @@ void drawGhosts() {
         drawGhost(ghost);
     }
 }
+
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // Maze
+    for (int y = 0; y < ROWS; y++) {
+        for (int x = 0; x < COLS; x++) {
+            if (maze[y][x] == 1)
+                drawSquare(x, y, 0.1, 0.1, 0.8);
+            else
+                drawSquare(x, y, 0.0, 0.0, 0.0);
+        }
+    }
+
+    drawPellets();
+    drawPacman();
+    drawGhosts();
+
+    // Display Score and Lives
+    drawText(10, 20, "Score: " + to_string(score));
+    drawText(COLS * CELL - 150, 20, "Lives: " + to_string(lives));
+
+    // Display Slow Effect Timer if active
+    if (ghostSlowEffect) {
+        int secondsLeft = (ghostSlowTimer / 5) + 1;
+        drawText(COLS * CELL / 2 - 50, 20, "SLOW: " + to_string(secondsLeft) + "s");
+    }
+
+    // Game over or win messages
+    if (gameOver) {
+        drawText(COLS * CELL / 2 - 80, ROWS * CELL / 2, "GAME OVER!");
+        drawText(COLS * CELL / 2 - 100, ROWS * CELL / 2 + 30, "Press R to Restart");
+    }
+
+    if (gameWon) {
+        drawText(COLS * CELL / 2 - 60, ROWS * CELL / 2, "YOU WIN!");
+        drawText(COLS * CELL / 2 - 100, ROWS * CELL / 2 + 30, "Press R to Restart");
+    }
+
+    glutSwapBuffers();
+}
+
+void movePacman() {
+    if (gameOver || gameWon) return;
+
+    int nx = pacmanX + dirX;
+    int ny = pacmanY + dirY;
+
+    if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS && maze[ny][nx] != 1) {
+        pacmanX = nx;
+        pacmanY = ny;
+
+        // Check for pellet
+        if (maze[ny][nx] == 0) {   // pellet eaten
+            maze[ny][nx] = 2;
+            score += 10;
+        }
+        // Check for bonus perk
+        else if (maze[ny][nx] == 3) { // bonus perk eaten
+            maze[ny][nx] = 2;
+            score += BONUS_POINTS;
+            ghostSlowEffect = true;
+            ghostSlowTimer = SLOW_DURATION;
+        }
+
+        // Check if all pellets are eaten
+        bool allEaten = true;
+        for (int y = 0; y < ROWS && allEaten; y++) {
+            for (int x = 0; x < COLS && allEaten; x++) {
+                if (maze[y][x] == 0 || maze[y][x] == 3) {
+                    allEaten = false;
+                }
+            }
+        }
+        if (allEaten) {
+            gameWon = true;
+        }
+    }
+}
+
+// === IMPROVED CODE: Better Ghost Movement ===
+void moveGhosts() {
+    if (gameOver || gameWon) return;
+
+    for (auto& ghost : ghosts) {
+        // Skip movement if ghost is slowed (move every other frame)
+        if (ghostSlowEffect && (ghost.moveCounter % 2 == 0)) {
+            ghost.moveCounter++;
+            continue;
+        }
+
+        ghost.moveCounter++;
+
+        // Change direction randomly every 5-15 moves (more frequent changes for better maze coverage)
+        if (ghost.moveCounter > (5 + rand() % 11)) {
+            int directions[4][2] = {{1,0}, {-1,0}, {0,1}, {0,-1}};
+
+            // Try to find a valid direction
+            vector<pair<int, int>> validDirections;
+            for (int i = 0; i < 4; i++) {
+                int testX = ghost.x + directions[i][0];
+                int testY = ghost.y + directions[i][1];
+                if (testX >= 0 && testX < COLS && testY >= 0 && testY < ROWS &&
+                    maze[testY][testX] != 1) {
+                    validDirections.push_back({directions[i][0], directions[i][1]});
+                }
+            }
+
+            // If valid directions available, choose one randomly
+            if (!validDirections.empty()) {
+                int choice = rand() % validDirections.size();
+                ghost.dirX = validDirections[choice].first;
+                ghost.dirY = validDirections[choice].second;
+                ghost.moveCounter = 0;
+            }
+        }
+
+        int nx = ghost.x + ghost.dirX;
+        int ny = ghost.y + ghost.dirY;
+
+        // If next position is valid, move; otherwise, change direction immediately
+        if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS && maze[ny][nx] != 1) {
+            ghost.x = nx;
+            ghost.y = ny;
+        } else {
+            // Change direction immediately when hitting wall
+            int directions[4][2] = {{1,0}, {-1,0}, {0,1}, {0,-1}};
+            vector<pair<int, int>> validDirections;
+
+            for (int i = 0; i < 4; i++) {
+                int testX = ghost.x + directions[i][0];
+                int testY = ghost.y + directions[i][1];
+                if (testX >= 0 && testX < COLS && testY >= 0 && testY < ROWS &&
+                    maze[testY][testX] != 1) {
+                    validDirections.push_back({directions[i][0], directions[i][1]});
+                }
+            }
+
+            if (!validDirections.empty()) {
+                int choice = rand() % validDirections.size();
+                ghost.dirX = validDirections[choice].first;
+                ghost.dirY = validDirections[choice].second;
+            }
+            ghost.moveCounter = 0;
+        }
+    }
+}
