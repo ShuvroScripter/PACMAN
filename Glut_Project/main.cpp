@@ -196,3 +196,93 @@ void drawPacman() {
         glEnd();
     }
 }
+
+// === UPDATED CODE: Classic Ghost Drawing with Slow Effect ===
+void drawGhost(const Ghost& ghost) {
+    float centerX = ghost.x * CELL + CELL/2;
+    float centerY = ghost.y * CELL + CELL/2;
+    float radius = 15.0f;
+
+    // Set ghost color - blue if slowed, otherwise normal color
+    if (ghostSlowEffect || ghost.isSlowed) {
+        glColor3f(0.3, 0.3, 1.0); // Blue when slowed
+    } else {
+        glColor3f(ghost.r, ghost.g, ghost.b);
+    }
+
+    // Main ghost body (semi-circle with wavy bottom)
+    glBegin(GL_POLYGON);
+
+    // Draw top semi-circle
+    for (int i = 0; i <= 180; i++) {
+        float theta = i * 3.14159f / 180;
+        glVertex2f(centerX + radius * cos(theta),
+                   centerY + radius * sin(theta));
+    }
+
+    // Draw wavy bottom
+    glVertex2f(centerX + radius, centerY);
+    glVertex2f(centerX + radius * 0.6, centerY - radius * 0.3);
+    glVertex2f(centerX + radius * 0.3, centerY - radius * 0.6);
+    glVertex2f(centerX, centerY - radius * 0.3);
+    glVertex2f(centerX - radius * 0.3, centerY - radius * 0.6);
+    glVertex2f(centerX - radius * 0.6, centerY - radius * 0.3);
+    glVertex2f(centerX - radius, centerY);
+
+    glEnd();
+
+    // Draw eyes (white part)
+    glColor3f(1.0, 1.0, 1.0);
+    glBegin(GL_POLYGON);
+    for (int i = 0; i < 360; i++) {
+        float theta = i * 3.14159f / 180;
+        glVertex2f(centerX - 6 + 4 * cos(theta),
+                   centerY + 5 + 4 * sin(theta));
+    }
+    glEnd();
+
+    glBegin(GL_POLYGON);
+    for (int i = 0; i < 360; i++) {
+        float theta = i * 3.14159f / 180;
+        glVertex2f(centerX + 6 + 4 * cos(theta),
+                   centerY + 5 + 4 * sin(theta));
+    }
+    glEnd();
+
+    // Draw pupils (black part) - direction based
+    glColor3f(0.0, 0.0, 0.0);
+    float pupilOffsetX = 0, pupilOffsetY = 0;
+
+    // Adjust pupil position based on ghost direction
+    if (ghost.dirX == 1) { // Right
+        pupilOffsetX = 2;
+    } else if (ghost.dirX == -1) { // Left
+        pupilOffsetX = -2;
+    } else if (ghost.dirY == 1) { // Down
+        pupilOffsetY = -2;
+    } else if (ghost.dirY == -1) { // Up
+        pupilOffsetY = 2;
+    }
+
+    glBegin(GL_POLYGON);
+    for (int i = 0; i < 360; i++) {
+        float theta = i * 3.14159f / 180;
+        glVertex2f(centerX - 6 + pupilOffsetX + 2 * cos(theta),
+                   centerY + 5 + pupilOffsetY + 2 * sin(theta));
+    }
+    glEnd();
+
+    glBegin(GL_POLYGON);
+    for (int i = 0; i < 360; i++) {
+        float theta = i * 3.14159f / 180;
+        glVertex2f(centerX + 6 + pupilOffsetX + 2 * cos(theta),
+                   centerY + 5 + pupilOffsetY + 2 * sin(theta));
+    }
+    glEnd();
+}
+
+void drawGhosts() {
+    for (const auto& ghost : ghosts) {
+        drawGhost(ghost);
+    }
+}
