@@ -433,3 +433,85 @@ void moveGhosts() {
         }
     }
 }
+
+void checkCollisions() {
+    if (gameOver || gameWon) return;
+
+    for (const auto& ghost : ghosts) {
+        if (pacmanX == ghost.x && pacmanY == ghost.y) {
+            lives--;
+
+            if (lives <= 0) {
+                gameOver = true;
+            } else {
+                // Reset positions but keep score and maze state
+                pacmanX = 1;
+                pacmanY = 1;
+                dirX = 0;
+                dirY = 0;
+                initializeGhosts();
+            }
+            break;
+        }
+    }
+}
+
+void updateSlowEffect() {
+    if (ghostSlowEffect) {
+        ghostSlowTimer--;
+        if (ghostSlowTimer <= 0) {
+            ghostSlowEffect = false;
+        }
+    }
+}
+
+void timer(int value) {
+    movePacman();
+    moveGhosts();
+    checkCollisions();
+    updateSlowEffect();
+    glutPostRedisplay();
+    glutTimerFunc(200, timer, 0);
+}
+
+void handleKeys(int key, int, int) {
+    switch (key) {
+        case GLUT_KEY_UP:    dirX = 0; dirY = -1; break;
+        case GLUT_KEY_DOWN:  dirX = 0; dirY = 1;  break;
+        case GLUT_KEY_LEFT:  dirX = -1; dirY = 0; break;
+        case GLUT_KEY_RIGHT: dirX = 1;  dirY = 0; break;
+    }
+}
+
+void keyboard(unsigned char key, int, int) {
+    if (key == 'r' || key == 'R') {
+        resetGame();
+    }
+}
+
+void init() {
+    glClearColor(0, 0, 0, 0);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, COLS * CELL, ROWS * CELL, 0);
+    srand(time(0));
+    initializeBonusPerks();
+    initializeGhosts();
+}
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+    glutInitWindowSize(COLS * CELL, ROWS * CELL + 40);
+    glutCreateWindow("Pac-Man with Bonus Perks");
+
+    init();
+
+    glutDisplayFunc(display);
+    glutSpecialFunc(handleKeys);
+    glutKeyboardFunc(keyboard);
+    glutTimerFunc(200, timer, 0);
+
+    glutMainLoop();
+    return 0;
+}
